@@ -1,0 +1,14 @@
+{
+  "name": "NodeJsApplication",
+  "version": "1.0.0",
+  "keywords": ["util", "functional", "server", "client", "bro"],
+  "author": "Cosimo",
+  "contributors": [],
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.7" 
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
