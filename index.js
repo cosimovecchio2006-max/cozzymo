@@ -1,3 +1,12 @@
+const PORT = process.env.PORT || 3000; // Usa la porta di Render O la 3000 come fallback
+
+app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+    // Aggiungi qui la riga per prevenire l'uscita anticipata se manca
+    // process.stdin.resume(); 
+});
+
+
 const CLIENT_ID = '1433147626139947159'; // Il tuo ID applicazione
 const CLIENT_SECRET = 'tlG-7uEpVPqgsQxjMTqkF4Z1QqDJeAbs'; // La tua chiave segreta
-const REDIRECT_URI = 'https://cosimovecchio2006-max-project.onrender.com/discord-callback';
+const REDIRECT_URI = 'https://https://cozzymo.onrender.com/discord-callback';
