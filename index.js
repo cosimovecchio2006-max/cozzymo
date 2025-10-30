@@ -18,7 +18,7 @@ const DISCORD_API_URL = 'https://discord.com/api/v10';
 
 // --- Supabase Credentials ---
 // NOTA: Questi valori DEVONO essere definiti DOPO la riga "require('@supabase/supabase-js')"
-const SUPABASE_URL = 'https://syfudiaskiibtyknxbu.supabase.co'; 
+const SUPABASE_URL = 'https://syfudiaskiiibtyknxbu.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZnVkaWFza2lpaWJ0eWtueGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MzI0ODcsImV4cCI6MjA3NzQwODQ4N30.Zy1lpVz3pHySpzs4ckFfYZ1Ia1-D7fTMMjBECZtXtd8';
 
 // Inizializzazione App e Clienti
