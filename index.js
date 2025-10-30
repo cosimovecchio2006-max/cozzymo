@@ -89,7 +89,8 @@ app.get('/discord-callback', async (req, res) => {
                 .from('traced_users') 
                 .insert([
                     { discord_user_id: userId } 
-                ]);
+                ],
+                        { returning: 'minimal' });
 
             if (error) {
                 console.error('Errore Supabase:', error);
