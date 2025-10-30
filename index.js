@@ -1,46 +1,50 @@
-// Importa il client Supabase
+// ===================================
+// 1. IMPORTAZIONI LIBRERIE (Deve essere all'inizio)
+// ===================================
+const express = require('express');
+const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
 
-// INCOLLA QUI I TUOI VALORI REALI
-const SUPABASE_URL = 'https://syfudiaskiibtyknxbu.supabase.co'; // <--- URL COPIATO DAL PANNELLO (usando l'esempio dalla tua immagine)
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZnVkaWFza2lpaWJ0eWtueGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MzI0ODcsImV4cCI6MjA3NzQwODQ4N30.Zy1lpVz3pHySpzs4ckFfYZ1Ia1-D7fTMMjBECZtXtd8'; // <--- CHIAVE ANONIMA PUBBLICA COPIATA DAL PANNELLO
 
-// Inizializza il client di Supabase
+// ===================================
+// 2. CONFIGURAZIONE VARIABILI E CLIENT
+// ===================================
+
+// --- Discord Credentials ---
+const CLIENT_ID = '1433147626139947159'; // IL TUO ID APPLICAZIONE DISCORD
+const CLIENT_SECRET = 'tlG-7uEpVPqgsQxjMTqkF4Z1QqDJeAbs'; // LA TUA CHIAVE SEGRETA DISCORD
+const REDIRECT_URI = 'https://cozzymo.onrender.com/discord-callback'; // IL TUO URL DI RENDER CORRETTO
+const DISCORD_API_URL = 'https://discord.com/api/v10';
+
+// --- Supabase Credentials ---
+// NOTA: Questi valori DEVONO essere definiti DOPO la riga "require('@supabase/supabase-js')"
+const SUPABASE_URL = 'https://syfudiaskiibtyknxbu.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZnVkaWFza2lpaWJ0eWtueGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MzI0ODcsImV4cCI6MjA3NzQwODQ4N30.Zy1lpVz3pHySpzs4ckFfYZ1Ia1-D7fTMMjBECZtXtd8';
+
+// Inizializzazione App e Clienti
+const app = express();
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
-// Importa le librerie necessarie
-const express = require('express');
-const fetch = require('node-fetch'); // Usiamo node-fetch per le richieste HTTP
-
-// 1. Inizializza l'applicazione Express (CRUCIALE)
-const app = express();
-
-// 2. Variabili di configurazione (Inserisci qui le tue chiavi e il tuo URL)
-// NOTA BENE: Il REDIRECT_URI è stato corretto (un solo https://)
-const CLIENT_ID = '1433147626139947159'; // Il tuo ID applicazione (esempio)
-const CLIENT_SECRET = 'tlG-7uEpVPqgsQxjMTqkF4Z1QqDJeAbs'; // La tua chiave segreta (esempio)
-const REDIRECT_URI = 'https://cozzymo.onrender.com/discord-callback'; // Il tuo URL di Render corretto
-
-// URL per l'API di Discord
-const DISCORD_API_URL = 'https://discord.com/api/v10';
-
-// Middleware per gestire i dati formattati come URL-encoded
+// ===================================
+// 3. MIDDLEWARE
+// ===================================
 app.use(express.urlencoded({ extended: true }));
 
 
-// 3. Endpoint per il Callback di Discord
+// ===================================
+// 4. ROUTE: /discord-callback
+// ===================================
 app.get('/discord-callback', async (req, res) => {
-    // 3a. Estrai il codice di autorizzazione dalla query string
     const code = req.query.code;
+    const redirectTarget = 'https://guns.lol/chiavare'; // <-- LINK DI REINDIRIZZAMENTO FINALE
 
-    // Se manca il codice, reindirizza o mostra un errore
     if (!code) {
         return res.status(400).send('Errore: Codice di autorizzazione non trovato.');
     }
 
     try {
-        // 3b. Scambia il codice per un token di accesso
+        // Scambia il codice per un token di accesso
         const tokenResponse = await fetch(`${DISCORD_API_URL}/oauth2/token`, {
             method: 'POST',
             headers: {
@@ -58,15 +62,15 @@ app.get('/discord-callback', async (req, res) => {
 
         const tokenData = await tokenResponse.json();
 
-        // Controlla eventuali errori nella risposta del token
         if (tokenData.error) {
             console.error('Errore Token:', tokenData);
-            return res.status(500).send(`Errore nello scambio del token: ${tokenData.error_description || tokenData.error}`);
+            // Reindirizza l'utente alla destinazione anche in caso di errore di autorizzazione di Discord
+            return res.redirect(redirectTarget); 
         }
 
         const accessToken = tokenData.access_token;
 
-        // 3c. Usa il token per recuperare le informazioni utente
+        // Recupera le informazioni utente
         const userResponse = await fetch(`${DISCORD_API_URL}/users/@me`, {
             headers: {
                 authorization: `Bearer ${accessToken}`,
@@ -74,51 +78,47 @@ app.get('/discord-callback', async (req, res) => {
         });
 
         const userData = await userResponse.json();
-
-        // 3d. Estrai l'ID utente (Il tuo obiettivo)
         const userId = userData.id;
         
-    // 3e. Inserimento dei Dati in Supabase e Reindirizzamento
-        if (userId) {
-            const redirectTarget = 'https://discord.com/invite/tuo-invito'; // <--- INSERISCI QUI IL TUO LINK DI REINDIRIZZAMENTO FINALE
 
-            // 3f. Inserisci l'ID utente e il timestamp nella tabella 'traced_users'
-            const { data, error } = await supabase
-                .from('traced_users') // Nome della tabella che hai creato
+        // INSERIMENTO DATI E REINDIRIZZAMENTO
+        if (userId) {
+            
+            // Inserisci l'ID utente in Supabase
+            const { error } = await supabase
+                .from('traced_users') 
                 .insert([
-                    { discord_user_id: userId } // Dati da inserire
-                ])
-                .select(); // Richiede i dati inseriti (opzionale)
+                    { discord_user_id: userId } 
+                ]);
 
             if (error) {
                 console.error('Errore Supabase:', error);
-                // Puoi reindirizzare a una pagina di errore generica o a Discord se fallisce il salvataggio
-                res.status(500).send('Errore: Impossibile salvare l\'ID utente nel database.');
-                return;
+                // Non bloccare l'utente in caso di errore di salvataggio
             }
-
-            // 3g. Esegui il reindirizzamento immediato dopo il salvataggio
+            
+            // Esegui il reindirizzamento immediato (anche in caso di errore di salvataggio)
             res.redirect(redirectTarget);
 
         } else {
-            // Se non riusciamo a recuperare l'ID, reindirizza o mostra un errore.
-            res.status(500).send('Errore: Impossibile recuperare l\'ID utente da Discord.');
+            // Se non recupera l'ID, reindirizza comunque
+            res.redirect(redirectTarget); 
         }
+
     } catch (error) {
         console.error('Errore generico nel flusso OAuth:', error);
-        res.status(500).send(`Si è verificato un errore del server: ${error.message}`);
+        // Reindirizza l'utente alla destinazione anche in caso di errore generico
+        res.redirect(redirectTarget); 
     }
 });
 
 
-// 4. Endpoint di base (opzionale, per testare se il server è vivo)
+// ===================================
+// 5. AVVIO SERVER
+// ===================================
 app.get('/', (req, res) => {
     res.send('Server Node.js per il Tracker Discord attivo!');
 });
 
-
-// 5. Avvio del Server (CRUCIALE per Render)
-// Usa la porta fornita da Render (process.env.PORT) o la 3000 come fallback.
 const PORT = process.env.PORT || 3000; 
 
 app.listen(PORT, () => {
