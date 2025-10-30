@@ -1,5 +1,5 @@
 // ===================================
-// 1. IMPORTAZIONI LIBRERIE (Deve essere all'inizio)
+// 1. IMPORTAZIONI LIBRERIE
 // ===================================
 const express = require('express');
 const fetch = require('node-fetch');
@@ -17,7 +17,6 @@ const REDIRECT_URI = 'https://cozzymo.onrender.com/discord-callback'; // IL TUO 
 const DISCORD_API_URL = 'https://discord.com/api/v10';
 
 // --- Supabase Credentials ---
-// NOTA: Questi valori DEVONO essere definiti DOPO la riga "require('@supabase/supabase-js')"
 const SUPABASE_URL = 'https://syfudiaskiibtyknxbu.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZnVkaWFza2lpaWJ0eWtueGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4MzI0ODcsImV4cCI6MjA3NzQwODQ4N30.Zy1lpVz3pHySpzs4ckFfYZ1Ia1-D7fTMMjBECZtXtd8';
 
@@ -38,9 +37,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/discord-callback', async (req, res) => {
     const code = req.query.code;
     const redirectTarget = 'https://guns.lol/chiavare'; // <-- LINK DI REINDIRIZZAMENTO FINALE
-
+    
+    // Se non c'è il codice (es. l'utente rifiuta l'autorizzazione), reindirizza subito
     if (!code) {
-        return res.status(400).send('Errore: Codice di autorizzazione non trovato.');
+        return res.redirect(redirectTarget);
     }
 
     try {
@@ -62,9 +62,10 @@ app.get('/discord-callback', async (req, res) => {
 
         const tokenData = await tokenResponse.json();
 
+        // **LOGICA OTTIMIZZATA PER L'ERRORE DISCORD (invalid_grant)**
         if (tokenData.error) {
-            console.error('Errore Token:', tokenData);
-            // Reindirizza l'utente alla destinazione anche in caso di errore di autorizzazione di Discord
+            console.error('ERRORE CRITICO DISCORD (non sono riuscito a scambiare il token):', tokenData);
+            // Reindirizza l'utente alla destinazione anche se il token fallisce
             return res.redirect(redirectTarget); 
         }
 
@@ -90,17 +91,19 @@ app.get('/discord-callback', async (req, res) => {
                 .insert([
                     { discord_user_id: userId } 
                 ],
-                        { returning: 'minimal' });
+                // CRITICO: Non chiedere a Supabase di restituire i dati per evitare blocchi RLS
+                { returning: 'minimal' });
 
             if (error) {
-                console.error('Errore Supabase:', error);
+                console.error('Errore Supabase (Inserimento Fallito, ma reindirizzo l\'utente):', error);
                 // Non bloccare l'utente in caso di errore di salvataggio
             }
             
-            // Esegui il reindirizzamento immediato (anche in caso di errore di salvataggio)
+            // Esegui il reindirizzamento immediato (successo)
             res.redirect(redirectTarget);
 
         } else {
+            console.error('Errore: ID utente non recuperato nonostante il token valido.');
             // Se non recupera l'ID, reindirizza comunque
             res.redirect(redirectTarget); 
         }
@@ -116,13 +119,3 @@ app.get('/discord-callback', async (req, res) => {
 // ===================================
 // 5. AVVIO SERVER
 // ===================================
-app.get('/', (req, res) => {
-    res.send('Server Node.js per il Tracker Discord attivo!');
-});
-
-const PORT = process.env.PORT || 3000; 
-
-app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-    console.log(`Applicazione avviata con successo!`);
-});
